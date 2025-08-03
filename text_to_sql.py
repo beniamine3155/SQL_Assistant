@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-
+from module.query_engine import get_sql_query
+from module.sql_utils import get_current_schema, execute_sql_query
 # from dotenv import load_dotenv
 # load_dotenv()
 
@@ -9,11 +10,40 @@ st.set_page_config(page_title="SQL Assistant", layout="wide")
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-
+# Sidebar: Table creator
+st.sidebar.title("🛠️ SQL Table Creator")
+sql_input = st.sidebar.text_area("Enter SQL to create or insert into tables:", height=200)
+if st.sidebar.button("Execute SQL"):
+    result, _ = execute_sql_query(sql_input)
+    if isinstance(result, str) and result.startswith("SQL Error"):
+        st.sidebar.error(result)
+    else:
+        st.sidebar.success("SQL executed successfully!")
 
 # Chat interface
 st.title("Chat With Your Current Database")
 st.markdown("Ask in text. This sql assistant will convert it to SQL and run it on your current DB.")
+
+user_input = st.chat_input("Ask a question about your data")
+if user_input:
+    # Append user message
+    st.session_state.chat_history.append(("user", user_input))
+
+    # Get current schema dynamically
+    schema = get_current_schema()
+
+    # Generate SQL
+    with st.spinner("Generating SQL..."):
+        sql_query = get_sql_query(user_input, schema)
+        st.session_state.chat_history.append(("assistant", sql_query))
+
+    # Execute SQL
+    with st.spinner("Running query..."):
+        result, columns = execute_sql_query(sql_query)
+        if isinstance(result, str) and result.startswith("SQL Error"):
+            st.session_state.chat_history.append(("error", result))
+        else:
+            st.session_state.chat_history.append(("result", (result, columns)))
 
 # Display chat history
 for role, content in st.session_state.chat_history:
