@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 from module.query_engine import get_sql_query
 from module.sql_utils import get_current_schema, execute_sql_query
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 st.set_page_config(page_title="SQL Assistant", layout="wide")
 
